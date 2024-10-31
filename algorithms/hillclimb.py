@@ -1,5 +1,3 @@
-from turtledemo.forest import start
-
 ROAD_WEIGHTS = {
     "highway": 1.0,
     "paved": 1.2,
@@ -23,13 +21,11 @@ class Node:
         self.h = 0
         self.parent = None
 
-# Define heuristic function outside the Node class
 def weighted_manhattan_heuristic(node, goal):
     road_type_weight = ROAD_WEIGHTS.get(node.road_type, 1.0)
     base_distance = abs(node.x - goal.x) + abs(node.y - goal.y)
     return base_distance * road_type_weight
 
-# Define hill climb function outside the Node class
 def hill_climb(start, goal, heuristic_func=weighted_manhattan_heuristic):
     current = start
     current.h = heuristic_func(current, goal)
@@ -53,7 +49,6 @@ def hill_climb(start, goal, heuristic_func=weighted_manhattan_heuristic):
 
     return reconstruct_path(current)
 
-# Define reconstruct_path function outside the Node class
 def reconstruct_path(node):
     path = []
     while node:

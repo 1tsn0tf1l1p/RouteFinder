@@ -11,9 +11,7 @@ class Node:
     def __init__(self, x, y, road_type="paved"):
         self.x = x
         self.y = y
-        self.g = float('inf')
-        self.h = 0
-        self.f = float('inf')
+        self.h = float('inf')
         self.parent = None
         self.neighbors = []
         self.road_type = road_type
@@ -21,25 +19,23 @@ class Node:
     def add_neighbor(self, neighbor, cost=1):
         self.neighbors.append((neighbor, cost))
 
-    def __lt__(self, other):
-        return self.f < other.f
-
     def reset(self):
-        self.g = float('inf')
-        self.h = 0
-        self.f = float('inf')
+        self.h = float('inf')
         self.parent = None
+
+    def __lt__(self, other):
+        return self.h < other.h
 
 def weighted_manhattan_heuristic(node, goal):
     road_type_weight = ROAD_WEIGHTS.get(node.road_type, 1.0)
     base_distance = abs(node.x - goal.x) + abs(node.y - goal.y)
     return base_distance * road_type_weight
 
-def astar(start, goal, heuristic_func=weighted_manhattan_heuristic):
+def best_first_search(start, goal, heuristic_func=weighted_manhattan_heuristic):
     open_set = []
-    heapq.heappush(open_set, (0, start))
-    start.g = 0
-    start.f = heuristic_func(start, goal)
+    visited = set()
+    start.h = heuristic_func(start, goal)
+    heapq.heappush(open_set, (start.h, start))
 
     while open_set:
         _, current = heapq.heappop(open_set)
@@ -47,16 +43,18 @@ def astar(start, goal, heuristic_func=weighted_manhattan_heuristic):
         if current == goal:
             return reconstruct_path(current)
 
+        visited.add(current)
+
         for neighbor, cost in current.neighbors:
-            tentative_g = current.g + cost * ROAD_WEIGHTS.get(neighbor.road_type, 1.0)
+            if neighbor in visited:
+                continue
 
-            if tentative_g < neighbor.g:
-                neighbor.g = tentative_g
-                neighbor.h = heuristic_func(neighbor, goal)
-                neighbor.f = neighbor.g + neighbor.h
+            neighbor_h = heuristic_func(neighbor, goal)
+
+            if neighbor.parent is None or neighbor_h < neighbor.h:
+                neighbor.h = neighbor_h
                 neighbor.parent = current
-
-                heapq.heappush(open_set, (neighbor.f, neighbor))
+                heapq.heappush(open_set, (neighbor_h, neighbor))
 
     return None
 
