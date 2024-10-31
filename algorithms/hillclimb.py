@@ -1,3 +1,5 @@
+import random
+
 ROAD_WEIGHTS = {
     "highway": 1.0,
     "paved": 1.2,
@@ -31,16 +33,16 @@ def hill_climb(start, goal, heuristic_func=weighted_manhattan_heuristic):
     current.h = heuristic_func(current, goal)
 
     while current != goal:
-        best_neighbor = None
-        best_h = float('inf')
+        # Get all neighbors with their heuristic values
+        neighbors = [(neighbor, heuristic_func(neighbor, goal)) for neighbor, cost in current.neighbors]
+        neighbors.sort(key=lambda x: x[1])  # Sort neighbors by heuristic value (ascending)
 
-        for neighbor, cost in current.neighbors:
-            neighbor_h = heuristic_func(neighbor, goal)
-            if neighbor_h < best_h:
-                best_h = neighbor_h
-                best_neighbor = neighbor
+        # Randomly choose from the best neighbors (within the top 3 or fewer)
+        best_neighbors = neighbors[:min(3, len(neighbors))]
+        best_neighbor, best_h = random.choice(best_neighbors)
 
-        if best_neighbor is None or best_h >= current.h:
+        # If no progress can be made, return None
+        if best_h >= current.h:
             return None
 
         best_neighbor.parent = current

@@ -1,16 +1,13 @@
 import time
 import pygame
-
-# Import each algorithm and its respective Node class
+import random
 from algorithms.astar import Node as AStarNode, astar
 from algorithms.hillclimb import Node as HillClimbNode, hill_climb
 from algorithms.bestfirst import Node as BestFirstSearchNode, best_first_search
 
-# Initialize Pygame
 pygame.init()
 
-# Constants
-WIDTH, HEIGHT = 1400, 1400
+WIDTH, HEIGHT = 800, 800
 ROWS, COLS = 100, 100
 CELL_SIZE = WIDTH // COLS
 
@@ -21,82 +18,64 @@ ROAD_COLORS = {
     "dirt": (100, 70, 50)
 }
 
+ROAD_TYPES = ["highway", "paved", "gravel", "dirt"]
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 TRUCK_COLORS = {
-    "hill_climb": (255, 0, 0),  # Red for Hill Climb
-    "best_first": (0, 255, 0),  # Green for Best-First Search
-    "a_star": (0, 0, 255)       # Blue for A*
+    "hill_climb": (255, 0, 0),
+    "best_first": (0, 255, 0),
+    "a_star": (0, 0, 255)
 }
 
-# Function to draw the grid
+def create_random_road_map(NodeClass):
+    nodes = [[NodeClass(x, y, road_type=random.choice(ROAD_TYPES)) for x in range(COLS)] for y in range(ROWS)]
+    for y in range(ROWS):
+        for x in range(COLS):
+            current_node = nodes[y][x]
+            if x > 0:
+                current_node.add_neighbor(nodes[y][x - 1])
+            if x < COLS - 1:
+                current_node.add_neighbor(nodes[y][x + 1])
+            if y > 0:
+                current_node.add_neighbor(nodes[y - 1][x])
+            if y < ROWS - 1:
+                current_node.add_neighbor(nodes[y + 1][x])
+    return nodes
+
 def draw_grid(screen, nodes):
     for row in nodes:
         for node in row:
             color = ROAD_COLORS[node.road_type]
-            pygame.draw.rect(screen, color, (node.x * CELL_SIZE, node.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-            pygame.draw.rect(screen, BLACK, (node.x * CELL_SIZE, node.y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 1)
+            rect = (node.x * CELL_SIZE, node.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(screen, color, rect)
+            pygame.draw.rect(screen, BLACK, rect, 1)
 
-# Function to animate the path
 def animate_path(screen, path, color):
     for x, y, road_type in path:
-        pygame.draw.rect(screen, color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        rect = (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+        pygame.draw.rect(screen, color, rect)
         pygame.display.flip()
-        time.sleep(0.05)
     time.sleep(3)
 
-def add_neighbors_to_grid(nodes):
-    for y in range(ROWS):
-        for x in range(COLS):
-            current_node = nodes[y][x]
-            if x > 0:  # Left neighbor
-                current_node.add_neighbor(nodes[y][x - 1])
-            if x < COLS - 1:  # Right neighbor
-                current_node.add_neighbor(nodes[y][x + 1])
-            if y > 0:  # Top neighbor
-                current_node.add_neighbor(nodes[y - 1][x])
-            if y < ROWS - 1:  # Bottom neighbor
-                current_node.add_neighbor(nodes[y + 1][x])
-
-# Main function
 def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("RouteFinder")
     clock = pygame.time.Clock()
 
-    # Create grids for each algorithm
-    hill_climb_nodes = [[HillClimbNode(x, y, road_type="paved") for x in range(COLS)] for y in range(ROWS)]
-    best_first_search_nodes = [[BestFirstSearchNode(x, y, road_type="paved") for x in range(COLS)] for y in range(ROWS)]
-    a_star_nodes = [[AStarNode(x, y, road_type="paved") for x in range(COLS)] for y in range(ROWS)]
+    hill_climb_nodes = create_random_road_map(HillClimbNode)
+    best_first_search_nodes = create_random_road_map(BestFirstSearchNode)
+    a_star_nodes = create_random_road_map(AStarNode)
 
-    # Add neighbors to each grid
-    add_neighbors_to_grid(hill_climb_nodes)
-    add_neighbors_to_grid(best_first_search_nodes)
-    add_neighbors_to_grid(a_star_nodes)
-
-    # Example of setting some road types
-    hill_climb_nodes[20][20].road_type = "highway"
-    hill_climb_nodes[40][40].road_type = "dirt"
-    hill_climb_nodes[60][60].road_type = "gravel"
-
-    best_first_search_nodes[20][20].road_type = "highway"
-    best_first_search_nodes[40][40].road_type = "dirt"
-    best_first_search_nodes[60][60].road_type = "gravel"
-
-    a_star_nodes[20][20].road_type = "highway"
-    a_star_nodes[40][40].road_type = "dirt"
-    a_star_nodes[60][60].road_type = "gravel"
-
-    # Main loop
     running = True
     while running:
         screen.fill(WHITE)
-        draw_grid(screen, hill_climb_nodes)  # Draw the grid for the first algorithm
+        draw_grid(screen, hill_climb_nodes)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_s:  # Press 'S' to start the algorithms
+                if event.key == pygame.K_s:
                     print("Running Hill Climb Algorithm")
                     path = hill_climb(hill_climb_nodes[0][0], hill_climb_nodes[ROWS - 1][COLS - 1])
                     if path:
