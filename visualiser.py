@@ -59,7 +59,7 @@ def animate_path(screen, path, color):
     time.sleep(3)
 
 def main():
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
     pygame.display.set_caption("RouteFinder")
     clock = pygame.time.Clock()
 
