@@ -28,28 +28,38 @@ def weighted_manhattan_heuristic(node, goal):
     base_distance = abs(node.x - goal.x) + abs(node.y - goal.y)
     return base_distance * road_type_weight
 
+
 def hill_climb(start, goal, heuristic_func=weighted_manhattan_heuristic):
-    current = start
-    current.h = heuristic_func(current, goal)
+    def backtrack(current, visited, depth=0):
+        print(f"Visiting ({current.x}, {current.y}), h={heuristic_func(current, goal)}")
 
-    while current != goal:
-        # Get all neighbors with their heuristic values
-        neighbors = [(neighbor, heuristic_func(neighbor, goal)) for neighbor, cost in current.neighbors]
-        neighbors.sort(key=lambda x: x[1])  # Sort neighbors by heuristic value (ascending)
+        if current == goal:
+            print("Goal reached!")
+            return [current]
 
-        # Randomly choose from the best neighbors (within the top 3 or fewer)
-        best_neighbors = neighbors[:min(3, len(neighbors))]
-        best_neighbor, best_h = random.choice(best_neighbors)
+        visited.add((current.x, current.y))
 
-        # If no progress can be made, return None
-        if best_h >= current.h:
-            return None
+        neighbors = [(n, heuristic_func(n, goal)) for n, c in current.neighbors if (n.x, n.y) not in visited]
+        neighbors.sort(key=lambda x: x[1])
 
-        best_neighbor.parent = current
-        current = best_neighbor
-        current.h = best_h
+        for neigh, hval in neighbors:
+            print(f"-> Trying neighbor ({neigh.x}, {neigh.y}), h={hval}")
+            neigh.parent = current
+            result = backtrack(neigh, visited, depth + 1)
+            if result is not None:
+                return [current] + result
 
-    return reconstruct_path(current)
+        print(f"No progress from ({current.x}, {current.y}), backtracking...")
+        visited.remove((current.x, current.y))
+        return None
+
+    path_nodes = backtrack(start, set())
+    if path_nodes is None:
+        print("No path found after exploring all options.")
+        return None
+
+    return [(node.x, node.y, node.road_type) for node in path_nodes]
+
 
 def reconstruct_path(node):
     path = []
