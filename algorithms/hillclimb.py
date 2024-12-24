@@ -1,4 +1,4 @@
-import random
+import heapq
 
 ROAD_WEIGHTS = {
     "highway": 1.0,
@@ -7,11 +7,12 @@ ROAD_WEIGHTS = {
     "dirt": 2.0
 }
 
+
 class Node:
     def __init__(self, x, y, road_type="paved"):
         self.x = x
         self.y = y
-        self.h = 0
+        self.h = float('inf')
         self.parent = None
         self.neighbors = []
         self.road_type = road_type
@@ -20,8 +21,12 @@ class Node:
         self.neighbors.append((neighbor, cost))
 
     def reset(self):
-        self.h = 0
+        self.h = float('inf')
         self.parent = None
+
+    def __lt__(self, other):
+        return self.h < other.h
+
 
 def weighted_manhattan_heuristic(node, goal):
     road_type_weight = ROAD_WEIGHTS.get(node.road_type, 1.0)
@@ -30,40 +35,47 @@ def weighted_manhattan_heuristic(node, goal):
 
 
 def hill_climb(start, goal, heuristic_func=weighted_manhattan_heuristic):
-    def backtrack(current, visited, depth=0):
-        print(f"Visiting ({current.x}, {current.y}), h={heuristic_func(current, goal)}")
+    pq = []
+    visited = set()
+
+    start.h = heuristic_func(start, goal)
+    heapq.heappush(pq, (start.h, start))
+    print(f"Start node: ({start.x}, {start.y}), h={start.h}")
+
+    while pq:
+        current_h, current = heapq.heappop(pq)
+        print(f"Processing node: ({current.x}, {current.y}), h={current_h}")
 
         if current == goal:
             print("Goal reached!")
-            return [current]
+            return reconstruct_path(current)
 
         visited.add((current.x, current.y))
 
-        neighbors = [(n, heuristic_func(n, goal)) for n, c in current.neighbors if (n.x, n.y) not in visited]
-        neighbors.sort(key=lambda x: x[1])
+        for neighbor, cost in current.neighbors:
+            if (neighbor.x, neighbor.y) in visited:
+                print(f"Skipping visited neighbor: ({neighbor.x}, {neighbor.y})")
+                continue
 
-        for neigh, hval in neighbors:
-            print(f"-> Trying neighbor ({neigh.x}, {neigh.y}), h={hval}")
-            neigh.parent = current
-            result = backtrack(neigh, visited, depth + 1)
-            if result is not None:
-                return [current] + result
+            neighbor_h = heuristic_func(neighbor, goal)
+            print(f"Evaluating neighbor: ({neighbor.x}, {neighbor.y}), h={neighbor_h}")
+            if neighbor_h < neighbor.h:
+                neighbor.h = neighbor_h
+                neighbor.parent = current
+                heapq.heappush(pq, (neighbor_h, neighbor))
+                print(f"Updated neighbor: ({neighbor.x}, {neighbor.y}), new h={neighbor_h}")
+            else:
+                print(f"Neighbor: ({neighbor.x}, {neighbor.y}) not updated, current h={neighbor.h}")
 
-        print(f"No progress from ({current.x}, {current.y}), backtracking...")
-        visited.remove((current.x, current.y))
-        return None
-
-    path_nodes = backtrack(start, set())
-    if path_nodes is None:
-        print("No path found after exploring all options.")
-        return None
-
-    return [(node.x, node.y, node.road_type) for node in path_nodes]
+    print("No path found after exploring all options.")
+    return None
 
 
 def reconstruct_path(node):
     path = []
+    print("Reconstructing path:")
     while node:
+        print(f"Node: ({node.x}, {node.y}), road_type={node.road_type}")
         path.append((node.x, node.y, node.road_type))
         node = node.parent
     return path[::-1]

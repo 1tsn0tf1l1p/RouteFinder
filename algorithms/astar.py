@@ -37,17 +37,27 @@ def weighted_manhattan_heuristic(node, goal):
 
 def astar(start, goal, heuristic_func=weighted_manhattan_heuristic):
     open_set = []
-    heapq.heappush(open_set, (0, start))
+    visited = set()
     start.g = 0
-    start.f = heuristic_func(start, goal)
+    start.h = heuristic_func(start, goal)
+    start.f = start.g + start.h
+    heapq.heappush(open_set, (start.f, start))
+    print(f"Starting A* from ({start.x}, {start.y}) to ({goal.x}, {goal.y})")
 
     while open_set:
         _, current = heapq.heappop(open_set)
+        print(f"Processing node: ({current.x}, {current.y}), g={current.g}, h={current.h}, f={current.f}")
 
         if current == goal:
+            print("Goal reached!")
             return reconstruct_path(current)
 
+        visited.add(current)
+
         for neighbor, cost in current.neighbors:
+            if neighbor in visited:
+                continue
+
             tentative_g = current.g + cost * ROAD_WEIGHTS.get(neighbor.road_type, 1.0)
 
             if tentative_g < neighbor.g:
@@ -55,14 +65,17 @@ def astar(start, goal, heuristic_func=weighted_manhattan_heuristic):
                 neighbor.h = heuristic_func(neighbor, goal)
                 neighbor.f = neighbor.g + neighbor.h
                 neighbor.parent = current
-
                 heapq.heappush(open_set, (neighbor.f, neighbor))
+                print(f"Updated neighbor: ({neighbor.x}, {neighbor.y}), g={neighbor.g}, h={neighbor.h}, f={neighbor.f}")
 
+    print("No path found.")
     return None
 
 def reconstruct_path(node):
     path = []
+    print("Reconstructing path:")
     while node:
+        print(f"Node: ({node.x}, {node.y}), road_type={node.road_type}")
         path.append((node.x, node.y, node.road_type))
         node = node.parent
     return path[::-1]
