@@ -8,7 +8,7 @@ from algorithms.bestfirst import Node as BestFirstSearchNode, best_first_search
 pygame.init()
 
 WIDTH, HEIGHT = 800, 800
-ROWS, COLS = 100, 100
+ROWS, COLS = 200, 200
 CELL_SIZE = WIDTH // COLS
 
 ROAD_COLORS = {
